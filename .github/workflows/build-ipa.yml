@@ -1,0 +1,63 @@
+name: Build iOS IPA (Unsigned)
+
+on:
+  workflow_dispatch:  # Manual trigger only – click "Run workflow" in Actions tab
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ----- If you're using Flutter, uncomment these lines -----
+      # - name: Setup Flutter
+      #   uses: subosito/flutter-action@v2
+      #   with:
+      #     flutter-version: '3.22.0'
+      # - name: Install Flutter dependencies
+      #   run: flutter pub get
+
+      # ----- If you're using React Native, uncomment these -----
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '18'
+      # - name: Install npm dependencies
+      #   run: npm install
+
+      # ----- Install CocoaPods (only if your project has a Podfile) -----
+      # KSign usually doesn't use CocoaPods, so this step will fail if you run it.
+      # I've commented it out. If your project DOES use it, uncomment and change the path.
+      # - name: Install CocoaPods
+      #   run: |
+      #     cd ios
+      #     pod install
+
+      # ----- Build the .xcarchive (unsigned) -----
+      - name: Archive project
+        run: |
+          xcodebuild archive \
+            -project Ksign.xcodeproj \            # ← Assumes you forked KSign (has .xcodeproj)
+            -scheme Ksign \                       # ← KSign's default scheme name
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath ./build/XSign.xcarchive \
+            CODE_SIGNING_ALLOWED=NO                # ⚠️ UNSIGNED – no certificate needed
+
+      # ----- Export .ipa from the archive (unsigned) -----
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath ./build/XSign.xcarchive \
+            -exportPath ./build \
+            -exportOptionsPlist exportOptions.plist \
+            -allowProvisioningUpdates
+
+      # ----- Upload the .ipa as a downloadable artifact -----
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: XSign-unsigned.ipa
+          path: ./build/*.ipa
