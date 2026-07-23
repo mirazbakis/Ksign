@@ -1,4 +1,4 @@
-      # ----- Build the .app directly (NO signing, NO archive) -----
+      # ----- Build the .app directly (NO signing, NO archive) ----
       - name: Build .app (Unsigned)
         run: |
           xcodebuild build \
